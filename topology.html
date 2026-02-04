@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GHOST - Topology</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/components.css">
+    <style>
+        .topology-canvas {
+            background: radial-gradient(circle at 50% 50%, rgba(30, 41, 59, 0.5) 0%, rgba(10, 14, 26, 1) 100%);
+            position: relative;
+            min-height: 350px;
+        }
+
+        .node {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .node:hover {
+            transform: scale(1.1);
+        }
+
+        .node-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        }
+
+        .node-icon.hq {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+        }
+
+        .node-icon.branch {
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+        }
+
+        .node-icon.cloud {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        }
+
+        .node-icon.firewall {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+
+        .node-label {
+            margin-top: 6px;
+            font-size: 10px;
+            font-weight: 600;
+            color: #e2e8f0;
+            text-align: center;
+        }
+
+        .node-status {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            border: 2px solid #0a0e1a;
+        }
+
+        .node-status.online {
+            background: #10b981;
+            box-shadow: 0 0 10px #10b981;
+        }
+
+        .tab-btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem 0.5rem 0 0;
+            background: rgba(31, 41, 55, 0.5);
+            color: #94a3b8;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .tab-btn.active {
+            background: var(--bg-glass-card);
+            color: #e2e8f0;
+            border-color: var(--border-secondary);
+            border-bottom: none;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .blocked-site {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 8px;
+            padding: 0.75rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .cost-card {
+            background: linear-gradient(135deg, rgba(31, 41, 55, 0.8), rgba(17, 24, 39, 0.9));
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        .cost-card.mpls {
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        .cost-card.sdwan {
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+
+        .savings-badge {
+            background: linear-gradient(135deg, #10b981, #059669);
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            font-weight: bold;
+        }
+
+        .witel-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(99, 102, 241, 0.2);
+            border: 1px solid rgba(99, 102, 241, 0.4);
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-size: 13px;
+        }
+
+        .field-group {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(99, 102, 241, 0.1);
+            border-radius: 12px;
+            padding: 1rem;
+        }
+
+        .field-group-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #6366f1;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .addon-check {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .addon-check:hover {
+            border-color: rgba(99, 102, 241, 0.5);
+        }
+
+        .addon-check.active {
+            background: rgba(99, 102, 241, 0.2);
+            border-color: #6366f1;
+        }
+
+        /* Chatbot */
+        .chatbot-toggle {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 8px 32px rgba(99, 102, 241, 0.4);
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+
+        .chatbot-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        .ghost-icon {
+            font-size: 28px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-5px);
+            }
+        }
+
+        .chatbot-panel {
+            position: fixed;
+            bottom: 100px;
+            right: 24px;
+            width: 380px;
+            height: 500px;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chatbot-panel.open {
+            display: flex;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .chatbot-header {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .chatbot-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .chat-message {
+            max-width: 85%;
+            padding: 12px 16px;
+            border-radius: 16px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .chat-message.bot {
+            background: rgba(99, 102, 241, 0.2);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            align-self: flex-start;
+        }
+
+        .chat-message.user {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            align-self: flex-end;
+        }
+
+        .chatbot-input {
+            padding: 1rem;
+            border-top: 1px solid rgba(99, 102, 241, 0.2);
+            display: flex;
+            gap: 8px;
+        }
+
+        .chatbot-input input {
+            flex: 1;
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 12px;
+            padding: 12px 16px;
+            color: #e2e8f0;
+        }
+
+        .chatbot-input button {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border: none;
+            border-radius: 12px;
+            padding: 12px 16px;
+            color: white;
+            cursor: pointer;
+        }
+
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 12px 16px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #6366f1;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+
+            0%,
+            100% {
+                opacity: 0.3;
+            }
+
+            50% {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <div class="sidebar-logo-icon"><i class="fas fa-network-wired"></i></div>
+            <span class="sidebar-logo-text">GHOST</span>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="customer.html" class="sidebar-nav-item" data-nav="customer">
+                <span class="sidebar-nav-icon"><i class="fas fa-users"></i></span>
+                <span class="sidebar-nav-text">Customer</span>
+            </a>
+            <a href="index.html" class="sidebar-nav-item" data-nav="overview">
+                <span class="sidebar-nav-icon"><i class="fas fa-chart-line"></i></span>
+                <span class="sidebar-nav-text">Overview</span>
+            </a>
+            <a href="topology.html" class="sidebar-nav-item active" data-nav="topology">
+                <span class="sidebar-nav-icon"><i class="fas fa-project-diagram"></i></span>
+                <span class="sidebar-nav-text">Topology</span>
+            </a>
+            <a href="business.html" class="sidebar-nav-item" data-nav="business">
+                <span class="sidebar-nav-icon"><i class="fas fa-briefcase"></i></span>
+                <span class="sidebar-nav-text">Business</span>
+            </a>
+            <a href="orders.html" class="sidebar-nav-item" data-nav="orders">
+                <span class="sidebar-nav-icon"><i class="fas fa-clipboard-list"></i></span>
+                <span class="sidebar-nav-text">Orders</span>
+            </a>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <header class="header fade-in">
+            <div class="header-title">
+                <h1>Network Topology</h1>
+                <p class="mono">SD-WAN Infrastructure Generator</p>
+            </div>
+            <div class="header-actions">
+                <div class="header-status">
+                    <div class="header-status-dot"></div><span class="header-status-text">LIVE</span>
+                </div>
+                <div class="header-avatar">OP</div>
+            </div>
+        </header>
+
+        <!-- Tabs -->
+        <div class="flex gap-1 mb-0 flex-wrap">
+            <button class="tab-btn active" onclick="showTab('generator')"><i class="fas fa-plus-circle mr-2"></i>Add New
+                Topology</button>
+            <button class="tab-btn" onclick="showTab('firewall')"><i
+                    class="fas fa-shield-alt mr-2"></i>Firewall</button>
+            <button class="tab-btn" onclick="showTab('failover')"><i class="fas fa-random mr-2"></i>Failover</button>
+        </div>
+
+        <!-- Tab: Topology Generator -->
+        <section id="tab-generator" class="tab-content active section-card rounded-t-none mb-8">
+            <h3 class="section-card-title mb-6"><i class="fas fa-sitemap"></i> Generate New Topology Plan</h3>
+
+            <!-- Basic Config -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2">Number of HQ</label>
+                    <input type="number" id="hqCount" value="1" min="1" max="5"
+                        class="form-input w-full text-xl font-bold text-center">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2">Number of Branch</label>
+                    <input type="number" id="branchCount" value="4" min="1" max="20"
+                        class="form-input w-full text-xl font-bold text-center">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2">Platform</label>
+                    <select id="platform" class="form-select w-full">
+                        <option value="meraki">Cisco Meraki</option>
+                        <option value="viptela">Cisco Viptela</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2">Controller</label>
+                    <select id="controller" class="form-select w-full">
+                        <option value="telkom">On-Premise Telkom</option>
+                        <option value="customer">On-Premise Customer</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Connectivity & Bandwidth -->
+            <div class="field-group mb-6">
+                <div class="field-group-title"><i class="fas fa-wifi mr-2"></i>Connectivity Configuration</div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-2">Connectivity Type</label>
+                        <select id="connectivity" class="form-select w-full">
+                            <option value="astinet-dedicated">Astinet Dedicated</option>
+                            <option value="astinet-lite">Astinet Lite</option>
+                            <option value="astinet-fit">Astinet Fit</option>
+                            <option value="indibiz">Indibiz Broadband</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-2">Bandwidth</label>
+                        <select id="bandwidth" class="form-select w-full">
+                            <option value="10">10 Mbps</option>
+                            <option value="20">20 Mbps</option>
+                            <option value="50">50 Mbps</option>
+                            <option value="100" selected>100 Mbps</option>
+                            <option value="200">200 Mbps</option>
+                            <option value="500">500 Mbps</option>
+                            <option value="1000">1 Gbps</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Witel Selection -->
+            <div class="field-group mb-6">
+                <div class="field-group-title"><i class="fas fa-map-marker-alt mr-2"></i>Witel Selection</div>
+                <div class="flex flex-wrap gap-3 mb-4" id="witelTags">
+                    <div class="witel-tag" data-witel="jakarta">
+                        <i class="fas fa-building text-indigo-400"></i>
+                        <span>Jakarta</span>
+                        <button onclick="removeWitel('jakarta')" class="text-gray-400 hover:text-red-400 ml-1"><i
+                                class="fas fa-times text-xs"></i></button>
+                    </div>
+                </div>
+                <div class="flex gap-3">
+                    <select id="witelSelect" class="form-select">
+                        <option value="">-- Pilih Witel --</option>
+                        <option value="jakarta">Jakarta</option>
+                        <option value="medan">Medan</option>
+                        <option value="surabaya">Surabaya</option>
+                        <option value="bali">Bali</option>
+                    </select>
+                    <button onclick="addWitel()" class="btn btn-outline"><i class="fas fa-plus mr-2"></i>Add
+                        Witel</button>
+                </div>
+            </div>
+
+            <!-- Add-On Modules -->
+            <div class="field-group mb-6">
+                <div class="field-group-title"><i class="fas fa-puzzle-piece mr-2"></i>Add-On Modules</div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="addon-check" id="addon4g" onclick="toggleAddon('addon4g')">
+                        <i class="fas fa-signal text-amber-400"></i>
+                        <div>
+                            <div class="font-semibold text-sm">Module 4G</div>
+                            <div class="text-xs text-gray-500">Backup LTE connectivity</div>
+                        </div>
+                        <i class="fas fa-check-circle text-emerald-400 ml-auto hidden"></i>
+                    </div>
+                    <div class="addon-check" id="addonConn" onclick="toggleAddon('addonConn')">
+                        <i class="fas fa-ethernet text-blue-400"></i>
+                        <div>
+                            <div class="font-semibold text-sm">Other Connectivity Port</div>
+                            <div class="text-xs text-gray-500">Additional WAN port</div>
+                        </div>
+                        <i class="fas fa-check-circle text-emerald-400 ml-auto hidden"></i>
+                    </div>
+                    <div class="addon-check" id="addonLan" onclick="toggleAddon('addonLan')">
+                        <i class="fas fa-network-wired text-purple-400"></i>
+                        <div>
+                            <div class="font-semibold text-sm">Extra LAN Port</div>
+                            <div class="text-xs text-gray-500">Expand LAN capacity</div>
+                        </div>
+                        <i class="fas fa-check-circle text-emerald-400 ml-auto hidden"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Generate Button -->
+            <div class="flex justify-center">
+                <button onclick="generateTopology()" class="btn btn-primary py-4 px-12 text-lg"><i
+                        class="fas fa-magic mr-2"></i>Generate Topology</button>
+            </div>
+
+            <!-- Generated Result -->
+            <div id="generatedResult" class="hidden">
+                <div class="border-t border-gray-700 pt-6 mt-6">
+                    <!-- Config Summary -->
+                    <div class="section-card mb-6" style="background: rgba(99, 102, 241, 0.05);">
+                        <h4 class="font-semibold text-indigo-400 mb-3"><i class="fas fa-cog mr-2"></i>Configuration
+                            Summary</h4>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                            <div><span class="text-gray-400">Platform:</span> <span id="sumPlatform"
+                                    class="font-semibold">Cisco Meraki</span></div>
+                            <div><span class="text-gray-400">Controller:</span> <span id="sumController"
+                                    class="font-semibold">On-Premise Telkom</span></div>
+                            <div><span class="text-gray-400">Connectivity:</span> <span id="sumConn"
+                                    class="font-semibold">Astinet Dedicated</span></div>
+                            <div><span class="text-gray-400">Bandwidth:</span> <span id="sumBw"
+                                    class="font-semibold">100 Mbps</span></div>
+                        </div>
+                        <div class="mt-3 pt-3 border-t border-gray-700 text-sm">
+                            <span class="text-gray-400">Witel:</span> <span id="sumWitel"
+                                class="font-semibold">Jakarta</span>
+                            <span class="text-gray-400 ml-4">Add-Ons:</span> <span id="sumAddons"
+                                class="font-semibold">-</span>
+                        </div>
+                    </div>
+
+                    <h4 class="text-lg font-semibold text-gray-200 mb-4"><i
+                            class="fas fa-project-diagram text-indigo-400 mr-2"></i>Generated Topology Plan</h4>
+                    <div class="topology-canvas rounded-xl mb-6" id="topologyCanvas"></div>
+
+                    <!-- Cost Comparison -->
+                    <h4 class="text-lg font-semibold text-gray-200 mb-4 mt-8"><i
+                            class="fas fa-calculator text-amber-400 mr-2"></i>Cost Analysis</h4>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                        <div class="cost-card mpls">
+                            <div class="flex items-center gap-2 mb-4">
+                                <i class="fas fa-times-circle text-red-400 text-xl"></i>
+                                <h5 class="font-bold text-red-400">Traditional MPLS</h5>
+                            </div>
+                            <div class="space-y-2 text-sm">
+                                <div class="flex justify-between"><span class="text-gray-400">Hardware/site</span><span
+                                        class="mono">$15,000</span></div>
+                                <div class="flex justify-between"><span class="text-gray-400">Circuit/mo</span><span
+                                        class="mono">$2,500</span></div>
+                                <div class="border-t border-red-500/30 pt-2 mt-2">
+                                    <div class="flex justify-between font-bold text-lg"><span>Year 1</span><span
+                                            class="text-red-400" id="mplsTotal">$255,000</span></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="cost-card sdwan">
+                            <div class="flex items-center gap-2 mb-4">
+                                <i class="fas fa-check-circle text-emerald-400 text-xl"></i>
+                                <h5 class="font-bold text-emerald-400">SD-WAN <span id="platformName">Meraki</span></h5>
+                            </div>
+                            <div class="space-y-2 text-sm">
+                                <div class="flex justify-between"><span class="text-gray-400">Appliance</span><span
+                                        class="mono" id="appliancePrice">$995</span></div>
+                                <div class="flex justify-between"><span class="text-gray-400">License/yr</span><span
+                                        class="mono" id="licensePrice">$450</span></div>
+                                <div class="border-t border-emerald-500/30 pt-2 mt-2">
+                                    <div class="flex justify-between font-bold text-lg"><span>Year 1</span><span
+                                            class="text-emerald-400" id="sdwanTotal">$31,225</span></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="cost-card"
+                            style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(6, 95, 70, 0.2)); border-color: rgba(16, 185, 129, 0.4);">
+                            <div class="text-center">
+                                <i class="fas fa-piggy-bank text-3xl text-emerald-400 mb-3"></i>
+                                <h5 class="font-bold text-emerald-400 mb-2">Savings</h5>
+                                <div class="savings-badge text-2xl mb-3" id="savingsAmount">$223,775</div>
+                                <div class="text-4xl font-bold text-emerald-400" id="savingsPercent">88%</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-center gap-4 mb-6">
+                        <button onclick="downloadPDF()" class="btn btn-primary py-3 px-8"><i
+                                class="fas fa-file-pdf mr-2"></i>Download Cost Report (PDF)</button>
+                    </div>
+
+                    <!-- Metrics -->
+                    <h4 class="text-lg font-semibold text-gray-200 mb-4 mt-8"><i
+                            class="fas fa-tachometer-alt text-cyan-400 mr-2"></i>Traffic Metrics</h4>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="section-card text-center">
+                            <div class="text-2xl font-bold text-blue-400 mono" id="metricUtil">72%</div>
+                            <div class="text-xs text-gray-400">Utilization</div>
+                        </div>
+                        <div class="section-card text-center">
+                            <div class="text-2xl font-bold text-indigo-400 mono" id="metricLatency">24ms</div>
+                            <div class="text-xs text-gray-400">Latency</div>
+                        </div>
+                        <div class="section-card text-center">
+                            <div class="text-2xl font-bold text-red-400 mono" id="metricPacketLoss">0.02%</div>
+                            <div class="text-xs text-gray-400">Packet Loss</div>
+                        </div>
+                        <div class="section-card text-center">
+                            <div class="text-2xl font-bold text-emerald-400 mono" id="metricThroughput">847 Mbps</div>
+                            <div class="text-xs text-gray-400">Throughput</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tab: Firewall -->
+        <section id="tab-firewall" class="tab-content section-card rounded-t-none mb-8">
+            <h3 class="section-card-title mb-6"><i class="fas fa-shield-alt"></i> Firewall - Website Blocking</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2">Block Website</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="blockUrl" placeholder="e.g. facebook.com" class="form-input flex-1">
+                        <button onclick="blockWebsite()" class="btn btn-primary"><i class="fas fa-ban"></i>
+                            Block</button>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2">Quick Block</label>
+                    <div class="flex gap-2 flex-wrap">
+                        <button onclick="quickBlock('facebook.com')" class="btn btn-outline text-sm"><i
+                                class="fab fa-facebook mr-1"></i>Facebook</button>
+                        <button onclick="quickBlock('instagram.com')" class="btn btn-outline text-sm"><i
+                                class="fab fa-instagram mr-1"></i>Instagram</button>
+                        <button onclick="quickBlock('tiktok.com')" class="btn btn-outline text-sm"><i
+                                class="fab fa-tiktok mr-1"></i>TikTok</button>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-6">
+                <h4 class="text-sm font-semibold text-gray-300 mb-4">Blocked (<span id="blockedCount">0</span>)</h4>
+                <div id="blockedList" class="space-y-2"></div>
+                <p id="noBlocked" class="text-gray-500 text-sm">No websites blocked.</p>
+            </div>
+        </section>
+
+        <!-- Tab: Failover -->
+        <section id="tab-failover" class="tab-content section-card rounded-t-none mb-8">
+            <h3 class="section-card-title mb-6"><i class="fas fa-random"></i> Failover Configuration</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div class="section-card">
+                    <h4 class="font-semibold text-emerald-400 mb-4"><span
+                            class="w-3 h-3 rounded-full bg-emerald-500 inline-block mr-2"></span>Primary</h4>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between"><span class="text-gray-400">Bandwidth</span><span
+                                class="mono">1 Gbps</span></div>
+                        <div class="flex justify-between"><span class="text-gray-400">Status</span><span
+                                class="text-emerald-400">● Active</span></div>
+                    </div>
+                </div>
+                <div class="section-card">
+                    <h4 class="font-semibold text-amber-400 mb-4"><span
+                            class="w-3 h-3 rounded-full bg-amber-500 inline-block mr-2"></span>Backup (4G LTE)</h4>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between"><span class="text-gray-400">Bandwidth</span><span
+                                class="mono">100 Mbps</span></div>
+                        <div class="flex justify-between"><span class="text-gray-400">Status</span><span
+                                class="text-amber-400">● Standby</span></div>
+                    </div>
+                </div>
+            </div>
+            <div class="flex gap-4">
+                <button onclick="simulateFailover()" class="btn btn-primary"><i class="fas fa-bolt mr-2"></i>Simulate
+                    Failover</button>
+                <button onclick="resetFailover()" class="btn btn-outline"><i class="fas fa-undo mr-2"></i>Reset</button>
+            </div>
+            <div id="failoverStatus" class="mt-4 hidden p-4 rounded-lg bg-amber-500/10 border border-amber-500/30">
+                <span class="text-amber-400 font-semibold"><i class="fas fa-exclamation-triangle mr-2"></i>Failover
+                    Active</span>
+            </div>
+        </section>
+    </main>
+
+    <!-- Chatbot -->
+    <button class="chatbot-toggle" onclick="toggleChatbot()" title="Chat with GHOST AI"><span
+            class="ghost-icon">👻</span></button>
+    <div class="chatbot-panel" id="chatbotPanel">
+        <div class="chatbot-header">
+            <span style="font-size: 24px;">👻</span>
+            <div>
+                <h4 class="font-bold text-white">GHOST AI</h4>
+                <p class="text-xs text-indigo-200">Powered by Google Gemini</p>
+            </div>
+            <button onclick="toggleChatbot()" class="ml-auto text-white/70 hover:text-white"><i
+                    class="fas fa-times"></i></button>
+        </div>
+        <div class="chatbot-messages" id="chatMessages">
+            <div class="chat-message bot">👻 Halo! Saya GHOST AI. Tanya saya tentang SD-WAN, network topology, atau
+                bantuan lainnya!</div>
+        </div>
+        <div class="chatbot-input">
+            <input type="text" id="chatInput" placeholder="Ketik pertanyaan..."
+                onkeypress="if(event.key==='Enter')sendMessage()">
+            <button onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <script src="js/navigation.js"></script>
+    <script>
+        let blockedSites = [];
+        let selectedWitels = ['jakarta'];
+        let activeAddons = [];
+        let generatedData = {};
+        const GEMINI_API_KEY = 'AIzaSyBZhsSQky78h9QRmL-dPmKescEDdtK96JY';
+
+        function showTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            event.target.closest('.tab-btn').classList.add('active');
+            document.getElementById('tab-' + tabId).classList.add('active');
+        }
+
+        function addWitel() {
+            const select = document.getElementById('witelSelect');
+            const witel = select.value;
+            if (witel && !selectedWitels.includes(witel)) {
+                selectedWitels.push(witel);
+                renderWitels();
+            }
+            select.value = '';
+        }
+
+        function removeWitel(witel) {
+            selectedWitels = selectedWitels.filter(w => w !== witel);
+            renderWitels();
+        }
+
+        function renderWitels() {
+            const container = document.getElementById('witelTags');
+            container.innerHTML = selectedWitels.map(w => `
+                <div class="witel-tag" data-witel="${w}">
+                    <i class="fas fa-building text-indigo-400"></i>
+                    <span>${w.charAt(0).toUpperCase() + w.slice(1)}</span>
+                    <button onclick="removeWitel('${w}')" class="text-gray-400 hover:text-red-400 ml-1"><i class="fas fa-times text-xs"></i></button>
+                </div>
+            `).join('');
+        }
+
+        function toggleAddon(id) {
+            const el = document.getElementById(id);
+            el.classList.toggle('active');
+            const icon = el.querySelector('.fa-check-circle');
+            icon.classList.toggle('hidden');
+            if (el.classList.contains('active')) {
+                if (!activeAddons.includes(id)) activeAddons.push(id);
+            } else {
+                activeAddons = activeAddons.filter(a => a !== id);
+            }
+        }
+
+        function generateTopology() {
+            const hqCount = parseInt(document.getElementById('hqCount').value);
+            const branchCount = parseInt(document.getElementById('branchCount').value);
+            const platform = document.getElementById('platform').value;
+            const controller = document.getElementById('controller').value;
+            const connectivity = document.getElementById('connectivity').value;
+            const bandwidth = document.getElementById('bandwidth').value;
+            const totalSites = hqCount + branchCount;
+
+            // Update summary
+            document.getElementById('sumPlatform').textContent = platform === 'meraki' ? 'Cisco Meraki' : 'Cisco Viptela';
+            document.getElementById('sumController').textContent = controller === 'telkom' ? 'On-Premise Telkom' : 'On-Premise Customer';
+            document.getElementById('sumConn').textContent = document.getElementById('connectivity').selectedOptions[0].text;
+            document.getElementById('sumBw').textContent = bandwidth + ' Mbps';
+            document.getElementById('sumWitel').textContent = selectedWitels.map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(', ');
+
+            const addonNames = [];
+            if (activeAddons.includes('addon4g')) addonNames.push('4G Module');
+            if (activeAddons.includes('addonConn')) addonNames.push('Extra WAN');
+            if (activeAddons.includes('addonLan')) addonNames.push('Extra LAN');
+            document.getElementById('sumAddons').textContent = addonNames.length ? addonNames.join(', ') : '-';
+
+            // Draw topology
+            const canvas = document.getElementById('topologyCanvas');
+            canvas.innerHTML = '';
+            canvas.innerHTML += `<div class="node" style="left:50%;top:5%;transform:translateX(-50%);"><div class="node-icon cloud"><i class="fas fa-cloud"></i><span class="node-status online"></span></div><div class="node-label">Internet</div></div>`;
+            canvas.innerHTML += `<div class="node" style="left:50%;top:22%;transform:translateX(-50%);"><div class="node-icon firewall"><i class="fas fa-shield-alt"></i><span class="node-status online"></span></div><div class="node-label">Firewall</div></div>`;
+
+            const hqSpacing = 100 / (hqCount + 1);
+            for (let i = 0; i < hqCount; i++) {
+                canvas.innerHTML += `<div class="node" style="left:${hqSpacing * (i + 1)}%;top:45%;"><div class="node-icon hq"><i class="fas fa-building"></i><span class="node-status online"></span></div><div class="node-label">HQ ${i + 1}</div></div>`;
+            }
+
+            const branchSpacing = 100 / (branchCount + 1);
+            for (let i = 0; i < branchCount; i++) {
+                canvas.innerHTML += `<div class="node" style="left:${branchSpacing * (i + 1)}%;top:75%;"><div class="node-icon branch"><i class="fas fa-server"></i><span class="node-status online"></span></div><div class="node-label">Branch ${i + 1}</div></div>`;
+            }
+
+            // Cost calculation
+            const mplsTotal = totalSites * (15000 + 2500 * 12 + 5000 + 3000);
+            const appliancePrice = platform === 'meraki' ? 995 : 1500;
+            const licensePrice = platform === 'meraki' ? 450 : 600;
+            let addonCost = 0;
+            if (activeAddons.includes('addon4g')) addonCost += 200 * totalSites;
+            if (activeAddons.includes('addonConn')) addonCost += 150 * totalSites;
+            if (activeAddons.includes('addonLan')) addonCost += 100 * totalSites;
+
+            const sdwanTotal = totalSites * (appliancePrice + licensePrice + 200 * 12) + addonCost;
+            const savings = mplsTotal - sdwanTotal;
+            const savingsPercent = Math.round((savings / mplsTotal) * 100);
+
+            document.getElementById('platformName').textContent = platform === 'meraki' ? 'Meraki' : 'Viptela';
+            document.getElementById('appliancePrice').textContent = '$' + appliancePrice;
+            document.getElementById('licensePrice').textContent = '$' + licensePrice;
+            document.getElementById('mplsTotal').textContent = '$' + mplsTotal.toLocaleString();
+            document.getElementById('sdwanTotal').textContent = '$' + sdwanTotal.toLocaleString();
+            document.getElementById('savingsAmount').textContent = '$' + savings.toLocaleString();
+            document.getElementById('savingsPercent').textContent = savingsPercent + '%';
+
+            document.getElementById('metricUtil').textContent = (60 + Math.floor(Math.random() * 30)) + '%';
+            document.getElementById('metricLatency').textContent = (15 + Math.floor(Math.random() * 20)) + 'ms';
+            document.getElementById('metricPacketLoss').textContent = (Math.random() * 0.1).toFixed(2) + '%';
+            document.getElementById('metricThroughput').textContent = (700 + Math.floor(Math.random() * 250)) + ' Mbps';
+
+            generatedData = { hqCount, branchCount, totalSites, platform, controller, connectivity, bandwidth, mplsTotal, sdwanTotal, savings, savingsPercent, witels: selectedWitels, addons: addonNames };
+            document.getElementById('generatedResult').classList.remove('hidden');
+        }
+
+        function downloadPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const d = generatedData;
+
+            doc.setFontSize(20); doc.setTextColor(99, 102, 241);
+            doc.text('GHOST - SD-WAN Cost Analysis', 20, 20);
+            doc.setFontSize(10); doc.setTextColor(100);
+            doc.text('Generated: ' + new Date().toLocaleString('id-ID'), 20, 28);
+
+            doc.setFontSize(12); doc.setTextColor(0);
+            doc.text('Configuration:', 20, 42);
+            doc.setFontSize(10);
+            doc.text('HQ: ' + d.hqCount + ' | Branch: ' + d.branchCount + ' | Total Sites: ' + d.totalSites, 25, 50);
+            doc.text('Platform: ' + (d.platform === 'meraki' ? 'Cisco Meraki' : 'Cisco Viptela'), 25, 57);
+            doc.text('Connectivity: ' + d.connectivity + ' | Bandwidth: ' + d.bandwidth + ' Mbps', 25, 64);
+            doc.text('Witel: ' + d.witels.join(', '), 25, 71);
+            doc.text('Add-Ons: ' + (d.addons.length ? d.addons.join(', ') : 'None'), 25, 78);
+
+            doc.setFontSize(12);
+            doc.text('Cost Comparison (Year 1):', 20, 95);
+            doc.setFillColor(254, 226, 226); doc.rect(20, 100, 80, 25, 'F');
+            doc.setTextColor(185, 28, 28); doc.text('Traditional MPLS', 25, 110);
+            doc.setFontSize(14); doc.text('$' + d.mplsTotal.toLocaleString(), 25, 120);
+
+            doc.setFillColor(209, 250, 229); doc.rect(110, 100, 80, 25, 'F');
+            doc.setTextColor(6, 95, 70); doc.setFontSize(12); doc.text('SD-WAN', 115, 110);
+            doc.setFontSize(14); doc.text('$' + d.sdwanTotal.toLocaleString(), 115, 120);
+
+            doc.setFontSize(16); doc.setTextColor(16, 185, 129);
+            doc.text('SAVINGS: $' + d.savings.toLocaleString() + ' (' + d.savingsPercent + '%)', 20, 145);
+
+            doc.save('GHOST_Cost_Analysis.pdf');
+        }
+
+        function blockWebsite() {
+            const url = document.getElementById('blockUrl').value.trim().toLowerCase();
+            if (url && !blockedSites.includes(url)) { blockedSites.push(url); renderBlockedList(); document.getElementById('blockUrl').value = ''; }
+        }
+        function quickBlock(url) { if (!blockedSites.includes(url)) { blockedSites.push(url); renderBlockedList(); } }
+        function unblockSite(url) { blockedSites = blockedSites.filter(s => s !== url); renderBlockedList(); }
+        function renderBlockedList() {
+            const list = document.getElementById('blockedList');
+            document.getElementById('blockedCount').textContent = blockedSites.length;
+            document.getElementById('noBlocked').classList.toggle('hidden', blockedSites.length > 0);
+            list.innerHTML = blockedSites.map(s => `<div class="blocked-site"><div class="flex items-center gap-3"><i class="fas fa-ban text-red-400"></i><span class="mono">${s}</span></div><button onclick="unblockSite('${s}')" class="text-gray-400 hover:text-red-400"><i class="fas fa-times"></i></button></div>`).join('');
+        }
+        function simulateFailover() { document.getElementById('failoverStatus').classList.remove('hidden'); }
+        function resetFailover() { document.getElementById('failoverStatus').classList.add('hidden'); }
+
+        function toggleChatbot() { document.getElementById('chatbotPanel').classList.toggle('open'); }
+
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            if (!message) return;
+
+            const messages = document.getElementById('chatMessages');
+            messages.innerHTML += `<div class="chat-message user">${message}</div>`;
+            input.value = '';
+            messages.innerHTML += `<div class="typing-indicator" id="typing"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>`;
+            messages.scrollTop = messages.scrollHeight;
+
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: `Kamu adalah GHOST AI Assistant, asisten untuk aplikasi SD-WAN dashboard GHOST milik Telkom Indonesia. Jawab dengan singkat dan helpful dalam bahasa Indonesia. Kamu ahli dalam jaringan, SD-WAN, Cisco Meraki, Cisco Viptela, dan solusi enterprise networking. Pertanyaan: ${message}` }] }]
+                    })
+                });
+
+                document.getElementById('typing')?.remove();
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Maaf, saya tidak bisa memproses pertanyaan tersebut.';
+                    messages.innerHTML += `<div class="chat-message bot">👻 ${reply}</div>`;
+                } else {
+                    messages.innerHTML += `<div class="chat-message bot">👻 Maaf, terjadi kesalahan. Silakan coba lagi.</div>`;
+                }
+            } catch (error) {
+                document.getElementById('typing')?.remove();
+                messages.innerHTML += `<div class="chat-message bot">👻 Maaf, tidak dapat terhubung ke server AI.</div>`;
+            }
+            messages.scrollTop = messages.scrollHeight;
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GHOST - Customer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/components.css">
+    <style>
+        .map-container {
+            position: relative;
+            background: radial-gradient(circle at 50% 50%, rgba(30, 41, 59, 0.5) 0%, rgba(10, 14, 26, 1) 100%);
+            border-radius: 16px;
+            padding: 20px;
+            min-height: 400px;
+        }
+
+        .map-marker {
+            position: absolute;
+            cursor: pointer;
+            transition: transform 0.3s;
+            z-index: 10;
+        }
+
+        .map-marker:hover {
+            transform: scale(1.3);
+            z-index: 20;
+        }
+
+        .marker-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 0 12px currentColor;
+        }
+
+        .marker-dot.konglomerasi {
+            background: #f59e0b;
+            color: #f59e0b;
+        }
+
+        .marker-dot.perbankan {
+            background: #3b82f6;
+            color: #3b82f6;
+        }
+
+        .marker-dot.logistik {
+            background: #10b981;
+            color: #10b981;
+        }
+
+        .marker-dot.kesehatan {
+            background: #ec4899;
+            color: #ec4899;
+        }
+
+        .marker-dot.government {
+            background: #8b5cf6;
+            color: #8b5cf6;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            background: rgba(30, 41, 59, 0.6);
+            border-radius: 8px;
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        /* Sales Funnel */
+        .funnel-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0;
+        }
+
+        .funnel-stage {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .funnel-stage:hover {
+            filter: brightness(1.1);
+            transform: scale(1.02);
+        }
+
+        .funnel-f0 {
+            width: 100%;
+            height: 60px;
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            clip-path: polygon(0 0, 100% 0, 95% 100%, 5% 100%);
+        }
+
+        .funnel-f1 {
+            width: 90%;
+            height: 60px;
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+            clip-path: polygon(5% 0, 95% 0, 90% 100%, 10% 100%);
+        }
+
+        .funnel-f2 {
+            width: 80%;
+            height: 60px;
+            background: linear-gradient(135deg, #a855f7, #9333ea);
+            clip-path: polygon(6% 0, 94% 0, 88% 100%, 12% 100%);
+        }
+
+        .funnel-f3 {
+            width: 70%;
+            height: 60px;
+            background: linear-gradient(135deg, #d946ef, #c026d3);
+            clip-path: polygon(7% 0, 93% 0, 85% 100%, 15% 100%);
+        }
+
+        .funnel-f4 {
+            width: 60%;
+            height: 60px;
+            background: linear-gradient(135deg, #ec4899, #db2777);
+            clip-path: polygon(8% 0, 92% 0, 82% 100%, 18% 100%);
+        }
+
+        .funnel-f5 {
+            width: 50%;
+            height: 60px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            clip-path: polygon(10% 0, 90% 0, 80% 100%, 20% 100%);
+            border-radius: 0 0 8px 8px;
+        }
+
+        .funnel-info {
+            position: absolute;
+            right: -220px;
+            width: 200px;
+            text-align: left;
+        }
+
+        .funnel-info-left {
+            position: absolute;
+            left: -220px;
+            width: 200px;
+            text-align: right;
+        }
+
+        .industry-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .industry-badge.konglomerasi {
+            background: rgba(245, 158, 11, 0.2);
+            color: #fbbf24;
+        }
+
+        .industry-badge.perbankan {
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+        }
+
+        .industry-badge.logistik {
+            background: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+        }
+
+        .industry-badge.kesehatan {
+            background: rgba(236, 72, 153, 0.2);
+            color: #f472b6;
+        }
+
+        .industry-badge.government {
+            background: rgba(139, 92, 246, 0.2);
+            color: #a78bfa;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <div class="sidebar-logo-icon"><i class="fas fa-network-wired"></i></div>
+            <span class="sidebar-logo-text">GHOST</span>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="customer.html" class="sidebar-nav-item active" data-nav="customer">
+                <span class="sidebar-nav-icon"><i class="fas fa-users"></i></span>
+                <span class="sidebar-nav-text">Customer</span>
+            </a>
+            <a href="index.html" class="sidebar-nav-item" data-nav="overview">
+                <span class="sidebar-nav-icon"><i class="fas fa-chart-line"></i></span>
+                <span class="sidebar-nav-text">Overview</span>
+            </a>
+            <a href="topology.html" class="sidebar-nav-item" data-nav="topology">
+                <span class="sidebar-nav-icon"><i class="fas fa-project-diagram"></i></span>
+                <span class="sidebar-nav-text">Topology</span>
+            </a>
+            <a href="business.html" class="sidebar-nav-item" data-nav="business">
+                <span class="sidebar-nav-icon"><i class="fas fa-briefcase"></i></span>
+                <span class="sidebar-nav-text">Business</span>
+            </a>
+            <a href="orders.html" class="sidebar-nav-item" data-nav="orders">
+                <span class="sidebar-nav-icon"><i class="fas fa-clipboard-list"></i></span>
+                <span class="sidebar-nav-text">Orders</span>
+            </a>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <header class="header fade-in">
+            <div class="header-title">
+                <h1>Customer Management</h1>
+                <p class="mono">Prospect Distribution & Sales Pipeline</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-primary"><i class="fas fa-plus mr-2"></i>Add Customer</button>
+                <div class="header-avatar">OP</div>
+            </div>
+        </header>
+
+        <!-- Stats -->
+        <section class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8 fade-in">
+            <div class="section-card text-center">
+                <div class="text-2xl font-bold text-amber-400 mono">24</div>
+                <div class="text-xs text-gray-400">Konglomerasi</div>
+            </div>
+            <div class="section-card text-center">
+                <div class="text-2xl font-bold text-blue-400 mono">18</div>
+                <div class="text-xs text-gray-400">Perbankan</div>
+            </div>
+            <div class="section-card text-center">
+                <div class="text-2xl font-bold text-emerald-400 mono">32</div>
+                <div class="text-xs text-gray-400">Logistik</div>
+            </div>
+            <div class="section-card text-center">
+                <div class="text-2xl font-bold text-pink-400 mono">15</div>
+                <div class="text-xs text-gray-400">Kesehatan</div>
+            </div>
+            <div class="section-card text-center">
+                <div class="text-2xl font-bold text-purple-400 mono">28</div>
+                <div class="text-xs text-gray-400">Government</div>
+            </div>
+        </section>
+
+        <!-- Map & Funnel -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <!-- Indonesia Map -->
+            <div class="lg:col-span-2 section-card">
+                <div class="section-card-header mb-4">
+                    <h3 class="section-card-title"><i class="fas fa-map-marked-alt"></i> Sebaran Perusahaan Indonesia
+                    </h3>
+                </div>
+                <div class="map-container">
+                    <!-- SVG Map Background -->
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/9/94/Indonesia_location_map.svg"
+                        alt="Indonesia Map" style="width: 100%; opacity: 0.3;">
+
+                    <!-- Markers - Sumatera -->
+                    <div class="map-marker" style="left: 18%; top: 35%;" title="Bank Sumut - Medan">
+                        <div class="marker-dot perbankan"></div>
+                    </div>
+                    <div class="map-marker" style="left: 22%; top: 45%;" title="PTPN - Palembang">
+                        <div class="marker-dot konglomerasi"></div>
+                    </div>
+                    <div class="map-marker" style="left: 15%; top: 28%;" title="RS Siloam - Medan">
+                        <div class="marker-dot kesehatan"></div>
+                    </div>
+
+                    <!-- Markers - Jawa -->
+                    <div class="map-marker" style="left: 38%; top: 65%;" title="Astra International - Jakarta">
+                        <div class="marker-dot konglomerasi"></div>
+                    </div>
+                    <div class="map-marker" style="left: 40%; top: 62%;" title="Bank Mandiri - Jakarta">
+                        <div class="marker-dot perbankan"></div>
+                    </div>
+                    <div class="map-marker" style="left: 42%; top: 68%;" title="JNE Express - Jakarta">
+                        <div class="marker-dot logistik"></div>
+                    </div>
+                    <div class="map-marker" style="left: 36%; top: 60%;" title="Kementerian Keuangan">
+                        <div class="marker-dot government"></div>
+                    </div>
+                    <div class="map-marker" style="left: 44%; top: 70%;" title="Sinar Mas Group">
+                        <div class="marker-dot konglomerasi"></div>
+                    </div>
+                    <div class="map-marker" style="left: 48%; top: 68%;" title="Bank BCA - Bandung">
+                        <div class="marker-dot perbankan"></div>
+                    </div>
+                    <div class="map-marker" style="left: 52%; top: 65%;" title="RSUP Hasan Sadikin">
+                        <div class="marker-dot kesehatan"></div>
+                    </div>
+                    <div class="map-marker" style="left: 58%; top: 70%;" title="Gudang Garam - Kediri">
+                        <div class="marker-dot konglomerasi"></div>
+                    </div>
+                    <div class="map-marker" style="left: 62%; top: 68%;" title="Pelindo - Surabaya">
+                        <div class="marker-dot logistik"></div>
+                    </div>
+                    <div class="map-marker" style="left: 60%; top: 72%;" title="Bank Jatim - Surabaya">
+                        <div class="marker-dot perbankan"></div>
+                    </div>
+                    <div class="map-marker" style="left: 64%; top: 66%;" title="Pemkot Surabaya">
+                        <div class="marker-dot government"></div>
+                    </div>
+
+                    <!-- Markers - Bali & Nusa Tenggara -->
+                    <div class="map-marker" style="left: 68%; top: 72%;" title="RSUP Sanglah - Bali">
+                        <div class="marker-dot kesehatan"></div>
+                    </div>
+                    <div class="map-marker" style="left: 70%; top: 70%;" title="Pemprov Bali">
+                        <div class="marker-dot government"></div>
+                    </div>
+
+                    <!-- Markers - Kalimantan -->
+                    <div class="map-marker" style="left: 55%; top: 45%;" title="Pertamina - Balikpapan">
+                        <div class="marker-dot konglomerasi"></div>
+                    </div>
+                    <div class="map-marker" style="left: 52%; top: 40%;" title="Bank Kaltim">
+                        <div class="marker-dot perbankan"></div>
+                    </div>
+                    <div class="map-marker" style="left: 58%; top: 38%;" title="Pemprov Kaltim">
+                        <div class="marker-dot government"></div>
+                    </div>
+
+                    <!-- Markers - Sulawesi -->
+                    <div class="map-marker" style="left: 72%; top: 50%;" title="Bosowa Group - Makassar">
+                        <div class="marker-dot konglomerasi"></div>
+                    </div>
+                    <div class="map-marker" style="left: 74%; top: 48%;" title="PELNI - Makassar">
+                        <div class="marker-dot logistik"></div>
+                    </div>
+                    <div class="map-marker" style="left: 70%; top: 52%;" title="RS Wahidin - Makassar">
+                        <div class="marker-dot kesehatan"></div>
+                    </div>
+
+                    <!-- Markers - Papua -->
+                    <div class="map-marker" style="left: 92%; top: 55%;" title="Freeport Indonesia">
+                        <div class="marker-dot konglomerasi"></div>
+                    </div>
+                    <div class="map-marker" style="left: 88%; top: 50%;" title="Pemprov Papua">
+                        <div class="marker-dot government"></div>
+                    </div>
+                </div>
+
+                <!-- Legend -->
+                <div class="flex flex-wrap gap-3 mt-4">
+                    <div class="legend-item">
+                        <div class="legend-dot" style="background: #f59e0b;"></div>
+                        <span class="text-sm text-gray-300">Konglomerasi</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-dot" style="background: #3b82f6;"></div>
+                        <span class="text-sm text-gray-300">Perbankan</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-dot" style="background: #10b981;"></div>
+                        <span class="text-sm text-gray-300">Logistik & Transportasi</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-dot" style="background: #ec4899;"></div>
+                        <span class="text-sm text-gray-300">Pelayanan Kesehatan</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-dot" style="background: #8b5cf6;"></div>
+                        <span class="text-sm text-gray-300">Government</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sales Funnel -->
+            <div class="section-card">
+                <h3 class="section-card-title mb-6"><i class="fas fa-filter"></i> Sales Funnel</h3>
+                <div class="funnel-container">
+                    <div class="funnel-stage funnel-f0">
+                        <div>
+                            <div class="text-sm">F0 - Lead</div>
+                            <div class="text-xs opacity-80">156 prospects</div>
+                        </div>
+                    </div>
+                    <div class="text-right text-sm mb-1 w-full pr-2"><span class="text-gray-400">Rp</span> <span
+                            class="text-indigo-400 font-bold">45.8 M</span></div>
+
+                    <div class="funnel-stage funnel-f1">
+                        <div>
+                            <div class="text-sm">F1 - Opportunity</div>
+                            <div class="text-xs opacity-80">98 prospects</div>
+                        </div>
+                    </div>
+                    <div class="text-right text-sm mb-1 w-full pr-4"><span class="text-gray-400">Rp</span> <span
+                            class="text-purple-400 font-bold">32.4 M</span></div>
+
+                    <div class="funnel-stage funnel-f2">
+                        <div>
+                            <div class="text-sm">F2 - Proposal</div>
+                            <div class="text-xs opacity-80">67 prospects</div>
+                        </div>
+                    </div>
+                    <div class="text-right text-sm mb-1 w-full pr-6"><span class="text-gray-400">Rp</span> <span
+                            class="text-fuchsia-400 font-bold">24.1 M</span></div>
+
+                    <div class="funnel-stage funnel-f3">
+                        <div>
+                            <div class="text-sm">F3 - Bidding/RPA</div>
+                            <div class="text-xs opacity-80">42 prospects</div>
+                        </div>
+                    </div>
+                    <div class="text-right text-sm mb-1 w-full pr-8"><span class="text-gray-400">Rp</span> <span
+                            class="text-pink-400 font-bold">18.7 M</span></div>
+
+                    <div class="funnel-stage funnel-f4">
+                        <div>
+                            <div class="text-sm">F4 - Negosiasi</div>
+                            <div class="text-xs opacity-80">28 prospects</div>
+                        </div>
+                    </div>
+                    <div class="text-right text-sm mb-1 w-full pr-10"><span class="text-gray-400">Rp</span> <span
+                            class="text-rose-400 font-bold">12.3 M</span></div>
+
+                    <div class="funnel-stage funnel-f5">
+                        <div>
+                            <div class="text-sm">F5 - Win 🎉</div>
+                            <div class="text-xs opacity-80">18 customers</div>
+                        </div>
+                    </div>
+                    <div class="text-right text-sm w-full pr-12"><span class="text-gray-400">Rp</span> <span
+                            class="text-emerald-400 font-bold">8.5 M</span></div>
+                </div>
+
+                <div class="mt-6 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg text-center">
+                    <div class="text-sm text-gray-400">Conversion Rate</div>
+                    <div class="text-3xl font-bold text-emerald-400">11.5%</div>
+                    <div class="text-xs text-gray-500 mt-1">Lead to Win</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Customer Table -->
+        <section class="section-card">
+            <div class="section-card-header">
+                <h3 class="section-card-title"><i class="fas fa-address-book"></i> Daftar Calon Pelanggan</h3>
+                <div class="flex gap-3">
+                    <input type="text" placeholder="Search customer..." class="form-input" style="width: 200px;">
+                    <select class="form-select">
+                        <option>All Industries</option>
+                        <option>Konglomerasi</option>
+                        <option>Perbankan</option>
+                        <option>Logistik</option>
+                        <option>Kesehatan</option>
+                        <option>Government</option>
+                    </select>
+                    <button class="btn btn-primary"><i class="fas fa-download"></i> Export</button>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th class="pl-4">#</th>
+                            <th>Nama Calon Pelanggan</th>
+                            <th>Industry</th>
+                            <th>Witel</th>
+                            <th class="text-center">Jumlah Cabang</th>
+                            <th>Sales Stage</th>
+                            <th class="text-right pr-4">Est. Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="border-b border-gray-800/50 hover:bg-indigo-500/5">
+                            <td class="py-4 pl-4 text-gray-500">1</td>
+                            <td class="py-4 font-semibold">PT Astra International Tbk</td>
+                            <td><span class="industry-badge konglomerasi"><i
+                                        class="fas fa-building"></i>Konglomerasi</span></td>
+                            <td>Jakarta</td>
+                            <td class="text-center mono font-bold">156</td>
+                            <td><span class="text-emerald-400">● F5 Win</span></td>
+                            <td class="text-right pr-4 mono text-emerald-400">Rp 2.4 M</td>
+                        </tr>
+                        <tr class="border-b border-gray-800/50 hover:bg-indigo-500/5">
+                            <td class="py-4 pl-4 text-gray-500">2</td>
+                            <td class="py-4 font-semibold">Bank Mandiri (Persero) Tbk</td>
+                            <td><span class="industry-badge perbankan"><i class="fas fa-university"></i>Perbankan</span>
+                            </td>
+                            <td>Jakarta</td>
+                            <td class="text-center mono font-bold">2,800</td>
+                            <td><span class="text-pink-400">● F4 Negosiasi</span></td>
+                            <td class="text-right pr-4 mono">Rp 5.2 M</td>
+                        </tr>
+                        <tr class="border-b border-gray-800/50 hover:bg-indigo-500/5">
+                            <td class="py-4 pl-4 text-gray-500">3</td>
+                            <td class="py-4 font-semibold">JNE Express</td>
+                            <td><span class="industry-badge logistik"><i class="fas fa-truck"></i>Logistik</span></td>
+                            <td>Jakarta</td>
+                            <td class="text-center mono font-bold">7,500</td>
+                            <td><span class="text-fuchsia-400">● F3 Bidding</span></td>
+                            <td class="text-right pr-4 mono">Rp 3.8 M</td>
+                        </tr>
+                        <tr class="border-b border-gray-800/50 hover:bg-indigo-500/5">
+                            <td class="py-4 pl-4 text-gray-500">4</td>
+                            <td class="py-4 font-semibold">RS Siloam Hospitals</td>
+                            <td><span class="industry-badge kesehatan"><i class="fas fa-hospital"></i>Kesehatan</span>
+                            </td>
+                            <td>Jakarta</td>
+                            <td class="text-center mono font-bold">41</td>
+                            <td><span class="text-purple-400">● F2 Proposal</span></td>
+                            <td class="text-right pr-4 mono">Rp 1.8 M</td>
+                        </tr>
+                        <tr class="border-b border-gray-800/50 hover:bg-indigo-500/5">
+                            <td class="py-4 pl-4 text-gray-500">5</td>
+                            <td class="py-4 font-semibold">Kementerian Keuangan RI</td>
+                            <td><span class="industry-badge government"><i class="fas fa-landmark"></i>Government</span>
+                            </td>
+                            <td>Jakarta</td>
+                            <td class="text-center mono font-bold">580</td>
+                            <td><span class="text-emerald-400">● F5 Win</span></td>
+                            <td class="text-right pr-4 mono text-emerald-400">Rp 4.5 M</td>
+                        </tr>
+                        <tr class="border-b border-gray-800/50 hover:bg-indigo-500/5">
+                            <td class="py-4 pl-4 text-gray-500">6</td>
+                            <td class="py-4 font-semibold">PT Sinar Mas Group</td>
+                            <td><span class="industry-badge konglomerasi"><i
+                                        class="fas fa-building"></i>Konglomerasi</span></td>
+                            <td>Jakarta</td>
+                            <td class="text-center mono font-bold">320</td>
+                            <td><span class="text-indigo-400">● F1 Opportunity</span></td>
+                            <td class="text-right pr-4 mono">Rp 2.1 M</td>
+                        </tr>
+                        <tr class="border-b border-gray-800/50 hover:bg-indigo-500/5">
+                            <td class="py-4 pl-4 text-gray-500">7</td>
+                            <td class="py-4 font-semibold">Bank BCA Tbk</td>
+                            <td><span class="industry-badge perbankan"><i class="fas fa-university"></i>Perbankan</span>
+                            </td>
+                            <td>Bandung</td>
+                            <td class="text-center mono font-bold">1,250</td>
+                            <td><span class="text-pink-400">● F4 Negosiasi</span></td>
+                            <td class="text-right pr-4 mono">Rp 3.9 M</td>
+                        </tr>
+                        <tr class="border-b border-gray-800/50 hover:bg-indigo-500/5">
+                            <td class="py-4 pl-4 text-gray-500">8</td>
+                            <td class="py-4 font-semibold">PT Pelindo (Persero)</td>
+                            <td><span class="industry-badge logistik"><i class="fas fa-ship"></i>Logistik</span></td>
+                            <td>Surabaya</td>
+                            <td class="text-center mono font-bold">45</td>
+                            <td><span class="text-purple-400">● F2 Proposal</span></td>
+                            <td class="text-right pr-4 mono">Rp 1.5 M</td>
+                        </tr>
+                        <tr class="border-b border-gray-800/50 hover:bg-indigo-500/5">
+                            <td class="py-4 pl-4 text-gray-500">9</td>
+                            <td class="py-4 font-semibold">PT Pertamina (Persero)</td>
+                            <td><span class="industry-badge konglomerasi"><i
+                                        class="fas fa-oil-can"></i>Konglomerasi</span></td>
+                            <td>Balikpapan</td>
+                            <td class="text-center mono font-bold">890</td>
+                            <td><span class="text-fuchsia-400">● F3 Bidding</span></td>
+                            <td class="text-right pr-4 mono">Rp 6.2 M</td>
+                        </tr>
+                        <tr class="border-b border-gray-800/50 hover:bg-indigo-500/5">
+                            <td class="py-4 pl-4 text-gray-500">10</td>
+                            <td class="py-4 font-semibold">Pemprov Bali</td>
+                            <td><span class="industry-badge government"><i class="fas fa-landmark"></i>Government</span>
+                            </td>
+                            <td>Bali</td>
+                            <td class="text-center mono font-bold">120</td>
+                            <td><span class="text-indigo-400">● F1 Opportunity</span></td>
+                            <td class="text-right pr-4 mono">Rp 0.9 M</td>
+                        </tr>
+                    </tbody>
+                    <tfoot>
+                        <tr class="border-t-2 border-gray-700 font-bold">
+                            <td colspan="4" class="py-4 pl-4 text-right text-gray-400">Total (10 customers)</td>
+                            <td class="text-center mono text-xl text-indigo-400">13,702</td>
+                            <td></td>
+                            <td class="text-right pr-4 mono text-xl text-emerald-400">Rp 32.3 M</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script src="js/navigation.js"></script>
+</body>
+
+</html>

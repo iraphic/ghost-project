@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GHOST - Business</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/components.css">
+</head>
+
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <div class="sidebar-logo-icon"><i class="fas fa-network-wired"></i></div>
+            <span class="sidebar-logo-text">GHOST</span>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="customer.html" class="sidebar-nav-item" data-nav="customer">
+                <span class="sidebar-nav-icon"><i class="fas fa-users"></i></span>
+                <span class="sidebar-nav-text">Customer</span>
+            </a>
+            <a href="index.html" class="sidebar-nav-item" data-nav="overview">
+                <span class="sidebar-nav-icon"><i class="fas fa-chart-line"></i></span>
+                <span class="sidebar-nav-text">Overview</span>
+            </a>
+            <a href="topology.html" class="sidebar-nav-item" data-nav="topology">
+                <span class="sidebar-nav-icon"><i class="fas fa-project-diagram"></i></span>
+                <span class="sidebar-nav-text">Topology</span>
+            </a>
+            <a href="business.html" class="sidebar-nav-item active" data-nav="business">
+                <span class="sidebar-nav-icon"><i class="fas fa-briefcase"></i></span>
+                <span class="sidebar-nav-text">Business</span>
+            </a>
+            <a href="orders.html" class="sidebar-nav-item" data-nav="orders">
+                <span class="sidebar-nav-icon"><i class="fas fa-clipboard-list"></i></span>
+                <span class="sidebar-nav-text">Orders</span>
+            </a>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <header class="header fade-in">
+            <div class="header-title">
+                <h1>Business Segmentation</h1>
+                <p class="mono">Analytics & Performance by Segment | Q1 2024</p>
+            </div>
+            <div class="header-actions">
+                <select class="form-select">
+                    <option>Q1 2024</option>
+                </select>
+                <button class="btn btn-primary"><i class="fas fa-file-export"></i> Export</button>
+                <div class="header-avatar">OP</div>
+            </div>
+        </header>
+
+        <!-- Segment Cards -->
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 fade-in">
+            <div class="summary-card border-purple">
+                <div class="summary-card-header">
+                    <div class="summary-card-content">
+                        <p class="summary-card-label">Enterprise</p>
+                        <h3 class="summary-card-value">54</h3>
+                        <div class="summary-card-trend positive"><i class="fas fa-arrow-up"></i> 15%</div>
+                    </div>
+                    <div class="summary-card-icon bg-purple"><i class="fas fa-building"></i></div>
+                </div>
+            </div>
+            <div class="summary-card border-indigo">
+                <div class="summary-card-header">
+                    <div class="summary-card-content">
+                        <p class="summary-card-label">SME</p>
+                        <h3 class="summary-card-value">115</h3>
+                        <div class="summary-card-trend positive"><i class="fas fa-arrow-up"></i> 22%</div>
+                    </div>
+                    <div class="summary-card-icon bg-indigo"><i class="fas fa-store"></i></div>
+                </div>
+            </div>
+            <div class="summary-card border-emerald">
+                <div class="summary-card-header">
+                    <div class="summary-card-content">
+                        <p class="summary-card-label">Government</p>
+                        <h3 class="summary-card-value">29</h3>
+                        <div class="summary-card-trend positive"><i class="fas fa-arrow-up"></i> 8%</div>
+                    </div>
+                    <div class="summary-card-icon bg-emerald"><i class="fas fa-landmark"></i></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Charts -->
+        <section class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <div class="section-card">
+                <h3 class="section-card-title mb-4"><i class="fas fa-chart-pie"></i> Segment Distribution</h3>
+                <div style="height: 250px;"><canvas id="segmentPieChart"></canvas></div>
+            </div>
+            <div class="section-card">
+                <h3 class="section-card-title mb-4"><i class="fas fa-chart-bar"></i> Orders by Region</h3>
+                <div style="height: 250px;"><canvas id="regionBarChart"></canvas></div>
+            </div>
+            <div class="section-card">
+                <h3 class="section-card-title mb-4"><i class="fas fa-chart-line"></i> Monthly Trend</h3>
+                <div style="height: 250px;"><canvas id="trendLineChart"></canvas></div>
+            </div>
+        </section>
+
+        <!-- Data Table -->
+        <section class="section-card">
+            <div class="section-card-header">
+                <h3 class="section-card-title"><i class="fas fa-table"></i> Complete Segmentation Data</h3>
+                <button class="btn btn-primary"><i class="fas fa-download"></i> Export</button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th class="pl-4">Segment</th>
+                            <th>Periode</th>
+                            <th>Region</th>
+                            <th>Witel</th>
+                            <th class="text-right">Orders</th>
+                            <th class="text-right pr-4">Revenue</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="border-b border-gray-800/50">
+                            <td class="py-4 pl-4"><span class="segment-badge segment-enterprise"><i
+                                        class="fas fa-building mr-2"></i>Enterprise</span></td>
+                            <td>Jan 2024</td>
+                            <td><span class="reg-badge reg-2">REG 2</span></td>
+                            <td>Jakarta Pusat</td>
+                            <td class="text-right font-bold mono">24</td>
+                            <td class="text-right pr-4 text-emerald-400 mono">4,800</td>
+                        </tr>
+                        <tr class="border-b border-gray-800/50">
+                            <td class="py-4 pl-4"><span class="segment-badge segment-sme"><i
+                                        class="fas fa-store mr-2"></i>SME</span></td>
+                            <td>Jan 2024</td>
+                            <td><span class="reg-badge reg-2">REG 2</span></td>
+                            <td>Bandung</td>
+                            <td class="text-right font-bold mono">45</td>
+                            <td class="text-right pr-4 text-emerald-400 mono">2,250</td>
+                        </tr>
+                        <tr class="border-b border-gray-800/50">
+                            <td class="py-4 pl-4"><span class="segment-badge segment-government"><i
+                                        class="fas fa-landmark mr-2"></i>Government</span></td>
+                            <td>Jan 2024</td>
+                            <td><span class="reg-badge reg-2">REG 2</span></td>
+                            <td>Jakarta Selatan</td>
+                            <td class="text-right font-bold mono">15</td>
+                            <td class="text-right pr-4 text-emerald-400 mono">3,750</td>
+                        </tr>
+                    </tbody>
+                    <tfoot style="border-top: 2px solid var(--border-gray);">
+                        <tr class="font-bold">
+                            <td colspan="4" class="py-4 text-right">TOTAL</td>
+                            <td class="py-4 text-right text-xl mono text-indigo-400">198</td>
+                            <td class="py-4 text-right pr-4 text-xl mono text-emerald-400">23,800</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script src="js/navigation.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Pie Chart
+            new Chart(document.getElementById('segmentPieChart'), {
+                type: 'doughnut',
+                data: { labels: ['Enterprise', 'SME', 'Government'], datasets: [{ data: [54, 115, 29], backgroundColor: ['rgba(139,92,246,0.3)', 'rgba(99,102,241,0.3)', 'rgba(16,185,129,0.3)'], borderColor: ['#a78bfa', '#818cf8', '#34d399'], borderWidth: 2 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8' } } }, cutout: '60%' }
+            });
+            // Bar Chart
+            new Chart(document.getElementById('regionBarChart'), {
+                type: 'bar',
+                data: { labels: ['REG 1', 'REG 2', 'REG 4', 'REG 5'], datasets: [{ data: [26, 122, 18, 32], backgroundColor: ['rgba(239,68,68,0.3)', 'rgba(59,130,246,0.3)', 'rgba(245,158,11,0.3)', 'rgba(168,85,247,0.3)'], borderColor: ['#f87171', '#60a5fa', '#fbbf24', '#c084fc'], borderWidth: 2, borderRadius: 8 }] },
+                options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b' } }, y: { grid: { display: false }, ticks: { color: '#64748b' } } } }
+            });
+            // Line Chart
+            new Chart(document.getElementById('trendLineChart'), {
+                type: 'line',
+                data: { labels: ['Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar'], datasets: [{ data: [145, 158, 172, 185, 198, 210], borderColor: '#6366f1', backgroundColor: 'rgba(99,102,241,0.1)', fill: true, tension: 0.4 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { color: '#64748b' } }, y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b' } } } }
+            });
+        });
+    </script>
+</body>
+
+</html>

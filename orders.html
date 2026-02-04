@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GHOST - Orders</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/components.css">
+</head>
+
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <div class="sidebar-logo-icon"><i class="fas fa-network-wired"></i></div>
+            <span class="sidebar-logo-text">GHOST</span>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="customer.html" class="sidebar-nav-item" data-nav="customer">
+                <span class="sidebar-nav-icon"><i class="fas fa-users"></i></span>
+                <span class="sidebar-nav-text">Customer</span>
+            </a>
+            <a href="index.html" class="sidebar-nav-item" data-nav="overview">
+                <span class="sidebar-nav-icon"><i class="fas fa-chart-line"></i></span>
+                <span class="sidebar-nav-text">Overview</span>
+            </a>
+            <a href="topology.html" class="sidebar-nav-item" data-nav="topology">
+                <span class="sidebar-nav-icon"><i class="fas fa-project-diagram"></i></span>
+                <span class="sidebar-nav-text">Topology</span>
+            </a>
+            <a href="business.html" class="sidebar-nav-item" data-nav="business">
+                <span class="sidebar-nav-icon"><i class="fas fa-briefcase"></i></span>
+                <span class="sidebar-nav-text">Business</span>
+            </a>
+            <a href="orders.html" class="sidebar-nav-item active" data-nav="orders">
+                <span class="sidebar-nav-icon"><i class="fas fa-clipboard-list"></i></span>
+                <span class="sidebar-nav-text">Orders</span>
+            </a>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <header class="header fade-in">
+            <div class="header-title">
+                <h1>Order Management</h1>
+                <p class="mono">SD-WAN Service Orders | Real-time Tracking</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-primary"><i class="fas fa-plus"></i> New Order</button>
+                <div class="header-avatar">OP</div>
+            </div>
+        </header>
+
+        <!-- Status Cards -->
+        <section class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 fade-in">
+            <div class="summary-card border-indigo">
+                <div class="summary-card-header">
+                    <div class="summary-card-content">
+                        <p class="summary-card-label">Total Orders</p>
+                        <h3 class="summary-card-value">247</h3>
+                    </div>
+                    <div class="summary-card-icon bg-indigo"><i class="fas fa-clipboard-list"></i></div>
+                </div>
+            </div>
+            <div class="section-card text-center">
+                <div class="text-2xl font-bold text-yellow-400 mono">32</div>
+                <div class="text-sm text-gray-400 mt-1">Pending</div>
+            </div>
+            <div class="section-card text-center">
+                <div class="text-2xl font-bold text-blue-400 mono">45</div>
+                <div class="text-sm text-gray-400 mt-1">In Progress</div>
+            </div>
+            <div class="section-card text-center">
+                <div class="text-2xl font-bold text-emerald-400 mono">170</div>
+                <div class="text-sm text-gray-400 mt-1">Completed</div>
+            </div>
+        </section>
+
+        <!-- Filters -->
+        <section class="section-card mb-8">
+            <div class="flex flex-wrap gap-4 items-center">
+                <input type="text" placeholder="Search Order ID or Customer..." class="form-input"
+                    style="width: 300px;">
+                <select class="form-select">
+                    <option>All Status</option>
+                    <option>Pending</option>
+                    <option>In Progress</option>
+                    <option>Completed</option>
+                </select>
+                <select class="form-select">
+                    <option>All Regions</option>
+                    <option>REG 1 - Sumatera</option>
+                    <option>REG 2 - Jawa</option>
+                    <option>REG 4 - Kalimantan</option>
+                    <option>REG 5 - Bali</option>
+                </select>
+                <button class="btn btn-outline"><i class="fas fa-filter"></i> Apply</button>
+                <button class="btn btn-primary ml-auto"><i class="fas fa-download"></i> Export</button>
+            </div>
+        </section>
+
+        <!-- Orders Table -->
+        <section class="section-card">
+            <div class="section-card-header">
+                <h3 class="section-card-title"><i class="fas fa-list"></i> Order List</h3>
+                <span class="text-sm text-gray-400">Showing 10 of 247 orders</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th class="pl-4">Order ID</th>
+                            <th>Customer</th>
+                            <th>Service Type</th>
+                            <th>Region</th>
+                            <th>Status</th>
+                            <th>Progress</th>
+                            <th class="text-center pr-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="border-b border-gray-800/50 hover:bg-indigo-500/5">
+                            <td class="py-4 pl-4 mono text-indigo-400 font-bold">ORD-2024-001</td>
+                            <td>PT Maju Jaya</td>
+                            <td>SD-WAN Hybrid</td>
+                            <td><span class="reg-badge reg-2">REG 2</span></td>
+                            <td><span class="status-badge in-progress">● In Progress</span></td>
+                            <td>
+                                <div class="w-24 bg-gray-700 rounded-full h-2">
+                                    <div class="bg-blue-500 h-2 rounded-full" style="width: 75%"></div>
+                                </div>
+                            </td>
+                            <td class="text-center pr-4"><button class="btn btn-outline text-xs">View</button></td>
+                        </tr>
+                        <tr class="border-b border-gray-800/50 hover:bg-indigo-500/5">
+                            <td class="py-4 pl-4 mono text-indigo-400 font-bold">ORD-2024-002</td>
+                            <td>CV Sukses Bersama</td>
+                            <td>SD-WAN Basic</td>
+                            <td><span class="reg-badge reg-1">REG 1</span></td>
+                            <td><span class="status-badge pending">● Pending</span></td>
+                            <td>
+                                <div class="w-24 bg-gray-700 rounded-full h-2">
+                                    <div class="bg-yellow-500 h-2 rounded-full" style="width: 25%"></div>
+                                </div>
+                            </td>
+                            <td class="text-center pr-4"><button class="btn btn-outline text-xs">View</button></td>
+                        </tr>
+                        <tr class="border-b border-gray-800/50 hover:bg-indigo-500/5">
+                            <td class="py-4 pl-4 mono text-indigo-400 font-bold">ORD-2024-003</td>
+                            <td>PT Digital Nusantara</td>
+                            <td>SD-WAN Enterprise</td>
+                            <td><span class="reg-badge reg-2">REG 2</span></td>
+                            <td><span class="status-badge active">● Completed</span></td>
+                            <td>
+                                <div class="w-24 bg-gray-700 rounded-full h-2">
+                                    <div class="bg-emerald-500 h-2 rounded-full" style="width: 100%"></div>
+                                </div>
+                            </td>
+                            <td class="text-center pr-4"><button class="btn btn-outline text-xs">View</button></td>
+                        </tr>
+                        <tr class="border-b border-gray-800/50 hover:bg-indigo-500/5">
+                            <td class="py-4 pl-4 mono text-indigo-400 font-bold">ORD-2024-004</td>
+                            <td>Kementerian XYZ</td>
+                            <td>SD-WAN Government</td>
+                            <td><span class="reg-badge reg-2">REG 2</span></td>
+                            <td><span class="status-badge in-progress">● In Progress</span></td>
+                            <td>
+                                <div class="w-24 bg-gray-700 rounded-full h-2">
+                                    <div class="bg-blue-500 h-2 rounded-full" style="width: 60%"></div>
+                                </div>
+                            </td>
+                            <td class="text-center pr-4"><button class="btn btn-outline text-xs">View</button></td>
+                        </tr>
+                        <tr class="border-b border-gray-800/50 hover:bg-indigo-500/5">
+                            <td class="py-4 pl-4 mono text-indigo-400 font-bold">ORD-2024-005</td>
+                            <td>PT Borneo Mining</td>
+                            <td>SD-WAN Hybrid</td>
+                            <td><span class="reg-badge reg-4">REG 4</span></td>
+                            <td><span class="status-badge pending">● Pending</span></td>
+                            <td>
+                                <div class="w-24 bg-gray-700 rounded-full h-2">
+                                    <div class="bg-yellow-500 h-2 rounded-full" style="width: 10%"></div>
+                                </div>
+                            </td>
+                            <td class="text-center pr-4"><button class="btn btn-outline text-xs">View</button></td>
+                        </tr>
+                        <tr class="border-b border-gray-800/50 hover:bg-indigo-500/5">
+                            <td class="py-4 pl-4 mono text-indigo-400 font-bold">ORD-2024-006</td>
+                            <td>PT Bali Resort</td>
+                            <td>SD-WAN Premium</td>
+                            <td><span class="reg-badge reg-5">REG 5</span></td>
+                            <td><span class="status-badge active">● Completed</span></td>
+                            <td>
+                                <div class="w-24 bg-gray-700 rounded-full h-2">
+                                    <div class="bg-emerald-500 h-2 rounded-full" style="width: 100%"></div>
+                                </div>
+                            </td>
+                            <td class="text-center pr-4"><button class="btn btn-outline text-xs">View</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="flex justify-between items-center mt-6 pt-6 border-t border-gray-700">
+                <span class="text-sm text-gray-400">Page 1 of 25</span>
+                <div class="flex gap-2">
+                    <button class="btn btn-outline text-sm" disabled>Previous</button>
+                    <button class="btn btn-primary text-sm">Next</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="js/navigation.js"></script>
+</body>
+
+</html>
