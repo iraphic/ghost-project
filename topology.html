@@ -17,6 +17,19 @@
             position: relative;
             min-height: 350px;
         }
+        .topology-links {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        .link-line {
+            stroke: rgba(99, 102, 241, 0.6);
+            stroke-width: 2.5;
+            stroke-linecap: round;
+        }
 
         .node {
             position: absolute;
@@ -569,12 +582,12 @@
                             </div>
                             <div class="space-y-2 text-sm">
                                 <div class="flex justify-between"><span class="text-gray-400">Hardware/site</span><span
-                                        class="mono">$15,000</span></div>
+                                        class="mono">Rp 15.000</span></div>
                                 <div class="flex justify-between"><span class="text-gray-400">Circuit/mo</span><span
-                                        class="mono">$2,500</span></div>
+                                        class="mono">Rp 2.500</span></div>
                                 <div class="border-t border-red-500/30 pt-2 mt-2">
                                     <div class="flex justify-between font-bold text-lg"><span>Year 1</span><span
-                                            class="text-red-400" id="mplsTotal">$255,000</span></div>
+                                            class="text-red-400" id="mplsTotal">Rp 255.000</span></div>
                                 </div>
                             </div>
                         </div>
@@ -585,12 +598,12 @@
                             </div>
                             <div class="space-y-2 text-sm">
                                 <div class="flex justify-between"><span class="text-gray-400">Appliance</span><span
-                                        class="mono" id="appliancePrice">$995</span></div>
+                                        class="mono" id="appliancePrice">Rp 995</span></div>
                                 <div class="flex justify-between"><span class="text-gray-400">License/yr</span><span
-                                        class="mono" id="licensePrice">$450</span></div>
+                                        class="mono" id="licensePrice">Rp 450</span></div>
                                 <div class="border-t border-emerald-500/30 pt-2 mt-2">
                                     <div class="flex justify-between font-bold text-lg"><span>Year 1</span><span
-                                            class="text-emerald-400" id="sdwanTotal">$31,225</span></div>
+                                            class="text-emerald-400" id="sdwanTotal">Rp 31.225</span></div>
                                 </div>
                             </div>
                         </div>
@@ -599,7 +612,7 @@
                             <div class="text-center">
                                 <i class="fas fa-piggy-bank text-3xl text-emerald-400 mb-3"></i>
                                 <h5 class="font-bold text-emerald-400 mb-2">Savings</h5>
-                                <div class="savings-badge text-2xl mb-3" id="savingsAmount">$223,775</div>
+                                <div class="savings-badge text-2xl mb-3" id="savingsAmount">Rp 223.775</div>
                                 <div class="text-4xl font-bold text-emerald-400" id="savingsPercent">88%</div>
                             </div>
                         </div>
@@ -734,6 +747,46 @@
         let activeAddons = [];
         let generatedData = {};
         const GEMINI_API_KEY = 'AIzaSyBZhsSQky78h9QRmL-dPmKescEDdtK96JY';
+        function formatIDR(value) { return 'Rp ' + Number(value).toLocaleString('id-ID'); }
+        function drawLinks(canvas) {
+            const svg = canvas.querySelector('#topologyLinks');
+            if (!svg) return;
+            svg.innerHTML = '';
+            function centerOf(node) {
+                const icon = node.querySelector('.node-icon');
+                const rect = icon.getBoundingClientRect();
+                const parent = canvas.getBoundingClientRect();
+                return { x: rect.left - parent.left + rect.width / 2, y: rect.top - parent.top + rect.height / 2 };
+            }
+            function addLine(p1, p2) {
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', p1.x); line.setAttribute('y1', p1.y);
+                line.setAttribute('x2', p2.x); line.setAttribute('y2', p2.y);
+                line.setAttribute('class', 'link-line');
+                svg.appendChild(line);
+            }
+            const cloudNode = canvas.querySelector('.node[data-role="cloud"]');
+            const fwNode = canvas.querySelector('.node[data-role="firewall"]');
+            if (!cloudNode || !fwNode) return;
+            addLine(centerOf(cloudNode), centerOf(fwNode));
+            const hqNodes = Array.from(canvas.querySelectorAll('.node[data-role="hq"]'));
+            hqNodes.forEach(hq => addLine(centerOf(fwNode), centerOf(hq)));
+            const branchNodes = Array.from(canvas.querySelectorAll('.node[data-role="branch"]'));
+            branchNodes.forEach(branch => {
+                let target = fwNode;
+                if (hqNodes.length) {
+                    const b = centerOf(branch);
+                    let best = hqNodes[0], min = Infinity;
+                    hqNodes.forEach(h => {
+                        const hp = centerOf(h);
+                        const dx = Math.abs(hp.x - b.x);
+                        if (dx < min) { min = dx; best = h; }
+                    });
+                    target = best;
+                }
+                addLine(centerOf(target), centerOf(branch));
+            });
+        }
 
         function showTab(tabId) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -804,19 +857,22 @@
 
             // Draw topology
             const canvas = document.getElementById('topologyCanvas');
-            canvas.innerHTML = '';
-            canvas.innerHTML += `<div class="node" style="left:50%;top:5%;transform:translateX(-50%);"><div class="node-icon cloud"><i class="fas fa-cloud"></i><span class="node-status online"></span></div><div class="node-label">Internet</div></div>`;
-            canvas.innerHTML += `<div class="node" style="left:50%;top:22%;transform:translateX(-50%);"><div class="node-icon firewall"><i class="fas fa-shield-alt"></i><span class="node-status online"></span></div><div class="node-label">Firewall</div></div>`;
+            canvas.innerHTML = '<svg class="topology-links" id="topologyLinks"></svg>';
+            canvas.innerHTML += `<div class="node" data-role="cloud" style="left:50%;top:5%;transform:translateX(-50%);"><div class="node-icon cloud"><i class="fas fa-cloud"></i><span class="node-status online"></span></div><div class="node-label">Server / Cloud</div></div>`;
+            canvas.innerHTML += `<div class="node" data-role="firewall" style="left:50%;top:26%;transform:translateX(-50%);"><div class="node-icon firewall"><i class="fas fa-shield-alt"></i><span class="node-status online"></span></div><div class="node-label">Firewall</div></div>`;
 
             const hqSpacing = 100 / (hqCount + 1);
             for (let i = 0; i < hqCount; i++) {
-                canvas.innerHTML += `<div class="node" style="left:${hqSpacing * (i + 1)}%;top:45%;"><div class="node-icon hq"><i class="fas fa-building"></i><span class="node-status online"></span></div><div class="node-label">HQ ${i + 1}</div></div>`;
+                canvas.innerHTML += `<div class="node" data-role="hq" data-index="${i}" style="left:${hqSpacing * (i + 1)}%;top:50%;"><div class="node-icon hq"><i class="fas fa-building"></i><span class="node-status online"></span></div><div class="node-label">HQ ${i + 1}</div></div>`;
             }
 
             const branchSpacing = 100 / (branchCount + 1);
             for (let i = 0; i < branchCount; i++) {
-                canvas.innerHTML += `<div class="node" style="left:${branchSpacing * (i + 1)}%;top:75%;"><div class="node-icon branch"><i class="fas fa-server"></i><span class="node-status online"></span></div><div class="node-label">Branch ${i + 1}</div></div>`;
+                canvas.innerHTML += `<div class="node" data-role="branch" data-index="${i}" style="left:${branchSpacing * (i + 1)}%;top:75%;"><div class="node-icon branch"><i class="fas fa-server"></i><span class="node-status online"></span></div><div class="node-label">Branch ${i + 1}</div></div>`;
             }
+
+            document.getElementById('generatedResult').classList.remove('hidden');
+            requestAnimationFrame(() => drawLinks(canvas));
 
             // Cost calculation
             const mplsTotal = totalSites * (15000 + 2500 * 12 + 5000 + 3000);
@@ -832,11 +888,11 @@
             const savingsPercent = Math.round((savings / mplsTotal) * 100);
 
             document.getElementById('platformName').textContent = platform === 'meraki' ? 'Meraki' : 'Viptela';
-            document.getElementById('appliancePrice').textContent = '$' + appliancePrice;
-            document.getElementById('licensePrice').textContent = '$' + licensePrice;
-            document.getElementById('mplsTotal').textContent = '$' + mplsTotal.toLocaleString();
-            document.getElementById('sdwanTotal').textContent = '$' + sdwanTotal.toLocaleString();
-            document.getElementById('savingsAmount').textContent = '$' + savings.toLocaleString();
+            document.getElementById('appliancePrice').textContent = formatIDR(appliancePrice);
+            document.getElementById('licensePrice').textContent = formatIDR(licensePrice);
+            document.getElementById('mplsTotal').textContent = formatIDR(mplsTotal);
+            document.getElementById('sdwanTotal').textContent = formatIDR(sdwanTotal);
+            document.getElementById('savingsAmount').textContent = formatIDR(savings);
             document.getElementById('savingsPercent').textContent = savingsPercent + '%';
 
             document.getElementById('metricUtil').textContent = (60 + Math.floor(Math.random() * 30)) + '%';
@@ -845,7 +901,13 @@
             document.getElementById('metricThroughput').textContent = (700 + Math.floor(Math.random() * 250)) + ' Mbps';
 
             generatedData = { hqCount, branchCount, totalSites, platform, controller, connectivity, bandwidth, mplsTotal, sdwanTotal, savings, savingsPercent, witels: selectedWitels, addons: addonNames };
-            document.getElementById('generatedResult').classList.remove('hidden');
+            window.addEventListener('resize', () => {
+                const c = document.getElementById('topologyCanvas');
+                if (!c) return;
+                const s = c.querySelector('#topologyLinks');
+                if (!s) return;
+                requestAnimationFrame(() => drawLinks(c));
+            }, { once: true });
         }
 
         function downloadPDF() {
@@ -871,14 +933,14 @@
             doc.text('Cost Comparison (Year 1):', 20, 95);
             doc.setFillColor(254, 226, 226); doc.rect(20, 100, 80, 25, 'F');
             doc.setTextColor(185, 28, 28); doc.text('Traditional MPLS', 25, 110);
-            doc.setFontSize(14); doc.text('$' + d.mplsTotal.toLocaleString(), 25, 120);
+            doc.setFontSize(14); doc.text(formatIDR(d.mplsTotal), 25, 120);
 
             doc.setFillColor(209, 250, 229); doc.rect(110, 100, 80, 25, 'F');
             doc.setTextColor(6, 95, 70); doc.setFontSize(12); doc.text('SD-WAN', 115, 110);
-            doc.setFontSize(14); doc.text('$' + d.sdwanTotal.toLocaleString(), 115, 120);
+            doc.setFontSize(14); doc.text(formatIDR(d.sdwanTotal), 115, 120);
 
             doc.setFontSize(16); doc.setTextColor(16, 185, 129);
-            doc.text('SAVINGS: $' + d.savings.toLocaleString() + ' (' + d.savingsPercent + '%)', 20, 145);
+            doc.text('SAVINGS: ' + formatIDR(d.savings) + ' (' + d.savingsPercent + '%)', 20, 145);
 
             doc.save('GHOST_Cost_Analysis.pdf');
         }
